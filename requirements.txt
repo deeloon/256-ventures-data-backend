@@ -1,3 +1,5 @@
+quandl
+pytz
 beautifulsoup4==4.8.0
 boto3==1.9.240
 requests==2.22.0
