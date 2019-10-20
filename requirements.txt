@@ -1,3 +1,6 @@
+numpy
+scipy
+statsmodels
 quandl
 pytz
 beautifulsoup4==4.8.0
