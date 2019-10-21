@@ -4,24 +4,22 @@ import statsmodels.formula.api as smf
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import requests
+import quandl
 
 
 def collect_mining_rev():
-    try:
-        mining_rev = pd.read_csv('data/Quandl/BCHAIN_MIREV.csv', index_col=False)
-    except FileNotFoundError:    # filepath is different when deployed on Elastic Beanstalk
-        mining_rev = pd.read_csv('/opt/python/current/app/data/Quandl/BCHAIN_MIREV.csv', index_col=False)
+    mining_rev = quandl.get("BCHAIN/MIREV", authtoken="8bR_DQgiqVJ9bregqeXG")
     return mining_rev
 
 
 def collect_coinmetrics():
     # Get Price Data
-    try:
-        coinmetrics_df = pd.read_csv('data/Coinmetrics/Coinmetrics_btc.csv',
-                                     usecols=['time', 'PriceUSD'], index_col=False)
-    except FileNotFoundError:    # filepath is different when deployed on Elastic Beanstalk
-        coinmetrics_df = pd.read_csv('/opt/python/current/app/data/Coinmetrics/Coinmetrics_btc.csv',
-                                     usecols=['time', 'PriceUSD'], index_col=False)
+    metrics = 'PriceUSD'
+    r = requests.get('https://community-api.coinmetrics.io/v2/assets/btc/metricdata?metrics=' + metrics)
+    r.raise_for_status()
+    json = r.json()
+    coinmetrics_df = pd.DataFrame(json['metricData']['series'], columns=['time', 'PriceUSD'])
     coinmetrics_df.time = pd.to_datetime(coinmetrics_df.time, dayfirst=True)
     coinmetrics_df.index = coinmetrics_df.time
     coinmetrics_df.index = coinmetrics_df.index.tz_localize(None)
@@ -79,3 +77,4 @@ def mining_rev_price_time_series_model(coinmetrics_df, mining_rev):
                       legend=dict(x=0.72, y=0.05))
     fig.update_yaxes(type='log')
     return fig
+

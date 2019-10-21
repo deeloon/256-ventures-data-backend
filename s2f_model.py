@@ -5,20 +5,72 @@ import scipy.stats
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime
+import requests
+from urllib.request import urlopen
+import ssl
+import os
+import gzip
+from bs4 import BeautifulSoup
 
 
 def collect_coinmetrics():
     # Get Price Data
-    coinmetrics_df = pd.read_csv('data/Coinmetrics/Coinmetrics_btc.csv', usecols=['time','PriceUSD'], index_col=False)
-    coinmetrics_df.time = pd.to_datetime(coinmetrics_df.time, dayfirst = True)
+    metrics = 'PriceUSD'
+    r = requests.get('https://community-api.coinmetrics.io/v2/assets/btc/metricdata?metrics=' + metrics)
+    r.raise_for_status()
+    series = r.json()['metricData']['series']
+    series_time = [series[i]['time'] for i in range(len(series))]
+    series_values = [float(series[i]['values'][0]) for i in range(len(series))]
+    coinmetrics_df = pd.DataFrame({'time': series_time, 'PriceUSD': series_values})
+    coinmetrics_df.time = pd.to_datetime(coinmetrics_df.time, dayfirst=True)
     coinmetrics_df.index = coinmetrics_df.time
     coinmetrics_df.index = coinmetrics_df.index.tz_localize(None)
     return coinmetrics_df
 
 
 def collect_blockchair():
+    ssl._create_default_https_context = ssl._create_unverified_context
+    filepath = 'data/Blockchair/blockchair.csv'
+    r = requests.get('https://gz.blockchair.com/bitcoin/blocks/')
+    r.raise_for_status()
+    blockchair_bs = BeautifulSoup(r.text, 'html.parser')
+    file_url_list = blockchair_bs.pre.find_all('a')
+    latest_date = datetime.strptime(file_url_list[-1].attrs['href'][-15:-7], '%Y%m%d')
+    blockchair_df = pd.read_csv(filepath, usecols=['time'])
+    last_date = datetime.strptime(str(pd.to_datetime(blockchair_df.iloc[-1]).values[0])[:10], '%Y-%m-%d')
+    interval = (latest_date - last_date).days
+    if interval > 0:
+        for i in range(-(latest_date - last_date).days, 0):
+            # This scrapes for the last entry in the download page
+            file_url = file_url_list[i].attrs['href']
+            download_url = 'https://gz.blockchair.com/bitcoin/blocks/' + file_url
+
+            # Download the file from `url` and save it locally under `filename`:
+            filename = "data/Blockchair/" + file_url[:-3]
+
+            with urlopen(download_url) as response, open(filename, 'wb') as file_out:
+                file_out.write(gzip.decompress(response.read()))
+
+            # Read as csv before appending
+            new_filename = filename[:-3] + 'csv'
+            blockchair_df = pd.read_csv(filename, sep='\t',
+                                        dtype={'version_bits': 'object', 'chainwork': 'object'}, index_col=['id'])
+
+            # Fix decimal place of certain columns
+            blockchair_df[['output_total', 'generation', 'reward']] = blockchair_df[['output_total', 'generation',
+                                                                                     'reward']] * 1e-8
+
+            # Append
+            blockchair_df.to_csv(filepath, mode='a', header=False)
+
+            # Delete file at 'filename'
+            try:
+                os.remove(filename)
+            except OSError as e:
+                print("Error: %s - %s." % (e.filename, e.strerror))
+
     # Get Block by Block Data
-    df = pd.read_csv('data/Blockchair/blockchair.csv')
+    df = pd.read_csv(filepath, usecols=['time', 'generation'])
     df.time = pd.to_datetime(df.time, dayfirst=True)
     df.index = df.time
     return df

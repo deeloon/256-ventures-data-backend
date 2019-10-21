@@ -9,8 +9,9 @@ from funding_rates_model import collect_funding, funding_rate_time_series_model
 
 blockchair_df, coinmetrics_df, mining_rev, funding_rates_df = collect_blockchair(), collect_coinmetrics(), \
                                                               collect_mining_rev(), collect_funding()
-mining_fig = mining_rev_price_time_series_model(coinmetrics_df, mining_rev)
 s2f_fig = s2f_generation_halved_time_series_model(blockchair_df, coinmetrics_df, 'D')
+mining_fig = mining_rev_price_time_series_model(coinmetrics_df, mining_rev)
+
 funding_fig = funding_rate_time_series_model(coinmetrics_df, funding_rates_df, 'D')
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
