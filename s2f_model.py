@@ -31,6 +31,10 @@ def collect_coinmetrics():
 def collect_blockchair():
     ssl._create_default_https_context = ssl._create_unverified_context
     filepath = 'data/Blockchair/blockchair.csv'
+    if os.path.isfile(filepath):
+        pass
+    else:
+        filepath = '/opt/python/current/app/data/Blockchair/blockchair.csv'
     r = requests.get('https://gz.blockchair.com/bitcoin/blocks/')
     r.raise_for_status()
     blockchair_bs = BeautifulSoup(r.text, 'html.parser')
@@ -52,8 +56,8 @@ def collect_blockchair():
                 file_out.write(gzip.decompress(response.read()))
 
             # Read as csv before appending
-            new_filename = filename[:-3] + 'csv'
-            blockchair_df = pd.read_csv(filename, sep='\t',
+            new_filename = filename[:-3] + 'tsv'
+            blockchair_df = pd.read_csv(new_filename, sep='\t',
                                         dtype={'version_bits': 'object', 'chainwork': 'object'}, index_col=['id'])
 
             # Fix decimal place of certain columns

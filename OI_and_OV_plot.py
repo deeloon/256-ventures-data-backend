@@ -3,13 +3,16 @@ import scipy.stats
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests
+import os
 
 
 def collect_OI_OV():
-    try:
-        OI_OV_df = pd.read_csv('data/Bitmex/OI_OV_XBT.csv', index_col='timestamp')
-    except FileNotFoundError:    # filepath is different when deployed on Elastic Beanstalk
-        OI_OV_df = pd.read_csv('/opt/python/current/app/data/Bitmex/OI_OV_XBT.csv', index_col='Date')
+    filepath = 'data/Bitmex/OI_OV_XBT.csv'
+    if os.path.isfile(filepath):
+        pass
+    else:
+        filepath = '/opt/python/current/app/data/Bitmex/OI_OV_XBT.csv'
+    OI_OV_df = pd.read_csv(filepath, index_col='timestamp')
     OI_OV_df.index = pd.to_datetime(OI_OV_df.index)
     return OI_OV_df
 
@@ -21,7 +24,12 @@ def update_OI_OV():
     data = r.json()
     instrument_df = pd.DataFrame(data)
     instrument_df['openValue_BTC'] = instrument_df['openValue']/100000000
-    instrument_df.to_csv('data/Bitmex/OI_OV_XBT.csv', mode='a', header=False, index=False)
+    filepath = 'data/Bitmex/OI_OV_XBT.csv'
+    if os.path.isfile(filepath):
+        pass
+    else:
+        filepath = '/opt/python/current/app/data/Bitmex/OI_OV_XBT.csv'
+    instrument_df.to_csv(filepath, mode='a', header=False, index=False)
 
 
 def plot_open_interest(OI_OV_df):

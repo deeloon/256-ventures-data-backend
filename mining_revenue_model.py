@@ -18,8 +18,10 @@ def collect_coinmetrics():
     metrics = 'PriceUSD'
     r = requests.get('https://community-api.coinmetrics.io/v2/assets/btc/metricdata?metrics=' + metrics)
     r.raise_for_status()
-    json = r.json()
-    coinmetrics_df = pd.DataFrame(json['metricData']['series'], columns=['time', 'PriceUSD'])
+    series = r.json()['metricData']['series']
+    series_time = [series[i]['time'] for i in range(len(series))]
+    series_values = [float(series[i]['values'][0]) for i in range(len(series))]
+    coinmetrics_df = pd.DataFrame({'time': series_time, 'PriceUSD': series_values})
     coinmetrics_df.time = pd.to_datetime(coinmetrics_df.time, dayfirst=True)
     coinmetrics_df.index = coinmetrics_df.time
     coinmetrics_df.index = coinmetrics_df.index.tz_localize(None)
@@ -77,4 +79,3 @@ def mining_rev_price_time_series_model(coinmetrics_df, mining_rev):
                       legend=dict(x=0.72, y=0.05))
     fig.update_yaxes(type='log')
     return fig
-
