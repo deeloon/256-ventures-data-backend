@@ -39,6 +39,10 @@ def funding_rate_time_series_model(coinmetrics_df, funding_rates_df, tf):
     df1 = funding_rates_df.resample(tf).mean()
     df2 = pd.merge(prices.dropna(), df1, left_index=True, right_index=True, how='inner')
 
+    # df2['fundingRate_5'] = df2.fundingRate.rolling(5).mean()
+    # df2['fundingRate_10'] = df2.fundingRate.rolling(10).mean()
+    # df2['fundingRate_25'] = df2.fundingRate.rolling(25).mean()
+    # df2['fundingRate_365'] = df2.fundingRate.rolling(365).mean()
     df2['fundingRate_zscore'] = zscore(df2.fundingRate)
 
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=("Price", "Funding rate zscores"),
@@ -47,6 +51,8 @@ def funding_rate_time_series_model(coinmetrics_df, funding_rates_df, tf):
     fig.append_trace(go.Scatter(x=df2.index, y=df2['PriceUSD'], mode='lines+markers', showlegend=False,
                                 marker=dict(size=5,
                                             color=df2['fundingRate_zscore'],  # set color equal to a variable
+                                            cmax=3.5,
+                                            cmin=-3.5,
                                             colorscale='viridis',  # one of plotly colorscales
                                             colorbar=dict(title='Funding rate zscores', titleside="right"),
                                             showscale=True)),
@@ -54,6 +60,8 @@ def funding_rate_time_series_model(coinmetrics_df, funding_rates_df, tf):
 
     fig.append_trace(go.Bar(x=df2.index, y=df2['fundingRate_zscore'], showlegend=False,
                             marker=dict(color=df2['fundingRate_zscore'],  # set color equal to a variable
+                                        cmax=3.5,
+                                        cmin=-3.5,
                                         colorscale='viridis',  # one of plotly colorscales
                                         showscale=False,
                                         )

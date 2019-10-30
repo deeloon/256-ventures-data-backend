@@ -32,7 +32,22 @@ def update_OI_OV():
     instrument_df.to_csv(filepath, mode='a', header=False, index=False)
 
 
-def plot_open_interest(OI_OV_df):
+def collect_coinmetrics():
+    # Get Price Data
+    metrics = 'PriceUSD'
+    r = requests.get('https://community-api.coinmetrics.io/v2/assets/btc/metricdata?metrics=' + metrics)
+    r.raise_for_status()
+    series = r.json()['metricData']['series']
+    series_time = [series[i]['time'] for i in range(len(series))]
+    series_values = [float(series[i]['values'][0]) for i in range(len(series))]
+    coinmetrics_df = pd.DataFrame({'time': series_time, 'PriceUSD': series_values})
+    coinmetrics_df.time = pd.to_datetime(coinmetrics_df.time, dayfirst=True)
+    coinmetrics_df.index = coinmetrics_df.time
+    coinmetrics_df.index = coinmetrics_df.index.tz_localize(None)
+    return coinmetrics_df
+
+
+def plot_open_interest(OI_OV_df, coinmetrics_df):
     """
     Inputs:
     OI_OV_df (dataframe): 'OI_OV_XBT.csv' dataframe declaration as well as a timeframe.
@@ -42,26 +57,51 @@ def plot_open_interest(OI_OV_df):
     """
     OI_OV_df['openInterest_zscore'] = scipy.stats.zscore(OI_OV_df['openInterest'])
     OI_OV_df['openValue_zscore'] = scipy.stats.zscore(OI_OV_df['openValue_BTC'])
-    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=("Open Interest", "Open Values (BTC)"), vertical_spacing=0.1)
+    first = OI_OV_df.dropna().index[0]
+    fig = make_subplots(rows=3, cols=1, shared_xaxes=True,
+                        subplot_titles=("Price", "Open Interest", "Open Values (BTC)"),
+                        vertical_spacing=0.05)
 
     # Add traces
+    fig.append_trace(go.Scatter(x=coinmetrics_df['PriceUSD'].loc[first:].index,
+                                y=coinmetrics_df['PriceUSD'].loc[first:],
+                                mode='lines+markers',
+                                showlegend=True,
+                                marker=dict(size=3,
+                                            color=OI_OV_df['openInterest_zscore'],  # set color equal to a variable
+                                            colorscale='viridis',  # one of plotly colorscales
+                                            colorbar=dict(title='openInterest zscores', titleside="right"),
+                                            showscale=True)
+                                ),
+                     row=1, col=1)
+
+    fig.append_trace(go.Scatter(x=coinmetrics_df['PriceUSD'].loc[first:].index,
+                                y=coinmetrics_df['PriceUSD'].loc[first:],
+                                mode='lines+markers',
+                                showlegend=True,
+                                marker=dict(size=3,
+                                            color=OI_OV_df['openValue_zscore'],  # set color equal to a variable
+                                            colorscale='Rainbow',  # one of plotly colorscales
+                                            colorbar=dict(x=1.15, title='openValue zscores', titleside="right"),
+                                            showscale=True)
+                                ),
+                     row=1, col=1)
+
     fig.append_trace(go.Scatter(x=OI_OV_df['openInterest'].dropna().index, y=OI_OV_df['openInterest'].dropna(),
                                 mode='lines+markers', showlegend=False,
-                                marker=dict(size=5,
-                                            color=OI_OV_df['openInterest_zscore'], #set color equal to a variable
-                                            colorscale='viridis', # one of plotly colorscales
-                                            colorbar=dict(yanchor='top', len=0.5, ypad=40,
-                                                          title='openInterest zscores', titleside="right"),
-                                            showscale=True)),
-                     row=1, col=1)
+                                marker=dict(size=3,
+                                            color=OI_OV_df['openInterest_zscore'],  # set color equal to a variable
+                                            colorscale='viridis',  # one of plotly colorscales
+                                            showscale=False)),
+                     row=2, col=1)
     fig.append_trace(go.Scatter(x=OI_OV_df['openValue_BTC'].dropna().index, y=OI_OV_df['openValue_BTC'].dropna(),
                                 mode='lines+markers', showlegend=False,
-                                marker=dict(size=5,
-                                            color=OI_OV_df['openInterest_zscore'], #set color equal to a variable
-                                            colorscale='viridis', # one of plotly colorscales
-                                            colorbar=dict(yanchor='bottom', len=0.5, ypad=40,
-                                                          title='openValue zscores', titleside="right"),
-                                            showscale=True)),
-                     row=2, col=1)
-    fig.update_layout(height=800, margin=dict(b=0, t=40, pad=1))
+                                marker=dict(size=3,
+                                            color=OI_OV_df['openValue_zscore'],  # set color equal to a variable
+                                            colorscale='Rainbow',  # one of plotly colorscales
+                                            showscale=False)),
+                     row=3, col=1)
+
+    fig.update_yaxes(title_text="Price", type="log", row=1, col=1)
+    fig.update_layout(height=1200, margin=dict(b=0, t=40, pad=1), legend=dict(x=0.88, y=0.99))
     return fig

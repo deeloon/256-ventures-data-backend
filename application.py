@@ -15,16 +15,15 @@ OI_OV_df = collect_OI_OV()
 s2f_fig = s2f_generation_halved_time_series_model(blockchair_df, coinmetrics_df, 'D')
 mining_fig = mining_rev_price_time_series_model(coinmetrics_df, mining_rev)
 funding_fig = funding_rate_time_series_model(coinmetrics_df, funding_rates_df, 'D')
-OI_OV_fig = plot_open_interest(OI_OV_df)
+OI_OV_fig = plot_open_interest(OI_OV_df, coinmetrics_df)
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-app.scripts.config.serve_locally = True
+# app.scripts.config.serve_locally = True
 
 app.config.suppress_callback_exceptions = True
-
 app.layout = html.Div([
     dcc.Tabs(id="tabs", value='tab-1', children=[
         dcc.Tab(label='s2f model', value='tab-1', children=[
@@ -45,7 +44,7 @@ app.layout = html.Div([
         interval=1000 * 60 * 60,    #* 24,    # in milliseconds
         n_intervals=0
     )
-])
+], style={'font-family': 'Verdana'})
 
 application = app.server
 
@@ -61,7 +60,7 @@ def update_graph_live(n):
     s2f_fig = s2f_generation_halved_time_series_model(blockchair_df, coinmetrics_df, 'D')
     mining_fig = mining_rev_price_time_series_model(coinmetrics_df, mining_rev)
     funding_fig = funding_rate_time_series_model(coinmetrics_df, funding_rates_df, 'D')
-    OI_OV_fig = plot_open_interest(OI_OV_df)
+    OI_OV_fig = plot_open_interest(OI_OV_df, coinmetrics_df)
     return s2f_fig, mining_fig, funding_fig, OI_OV_fig
 
 
