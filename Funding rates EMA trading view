@@ -1,0 +1,25 @@
+strategy("XBT Signal Aggregator", overlay=false, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Creates dropdown menu to select Days Used for MA
+i = input(title="Offset", defval=9, minval=2, maxval=30)
+
+// Funding Rates
+funding_rate_calc(src, days) =>
+    premiumIndexPeriod = security("BITMEX:XBTUSDPI", period, src)
+    interestBase = security("BITMEX:XBTBON", period, src)
+    interestQuote = security("BITMEX:USDBON", period, src)
+    interestRate = (interestQuote - interestBase) / 3
+    midlineVal = interestRate
+    fundingModifierRaw = interestRate - premiumIndexPeriod
+    fundingModifier = (fundingModifierRaw >= 0.0005) ? 0.0005 : (fundingModifierRaw <= -0.0005) ? -0.0005 : fundingModifierRaw
+    fundingRateRaw = (premiumIndexPeriod + fundingModifier)
+    fundingRateEMA = ema(fundingRateRaw, days)
+
+funding_rate = security(tickerid, period, funding_rate_calc(close, i)[1])
+funding_check = funding_rate < 0
+funding_plot_col = funding_check?green:maroon
+plotshape(i, title='Funding Check', color=funding_plot_col, style=shape.circle, size=size.tiny, location=location.absolute)
+
+strategy.entry("buy", strategy.long, 100, when=funding_rate < 0)
+strategy.entry("sell", strategy.short, 100, when=funding_rate > 0)
+//plot(strategy.equity)
