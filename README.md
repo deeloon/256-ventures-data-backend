@@ -19,7 +19,7 @@ https://nbviewer.jupyter.org/github/deeloon/256-ventures-data-backend/blob/maste
 
 
 ## Connect to virtual computer for the first time (on administrator account):
-1. Log in to AWS account and go to EC2 instance page. https://us-east-2.console.aws.amazon.com/ec2/home?region=us-east-2#Instances:sort=instanceId
+1. Log in to AWS account and go to EC2 instance page. https://us-east-2.console.aws.amazon.com/ec2/home?region=us-east-2#Instances:sort=instanceId (For Autoview: https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Instances:sort=instanceId)
 2. If you are trying to log in to the virtual computer from a new network, first add your IP address to security group.
 3. On the left sidebar, scroll to Network&Security -> Security Groups and click on it.
 4. On the dashboard, check the row with *Group Name* "launch-wizrd-1".
