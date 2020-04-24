@@ -29,7 +29,7 @@ https://nbviewer.jupyter.org/github/deeloon/256-ventures-data-backend/blob/maste
 8. Tick the row with an empty "Name" field. Click "Connect".
 9. Download remote desktop file. You will need an application to open this if your PC does not have one.
 10. To get login password of the virtual computer, click "Get Password". 
-11. Browse and upload 256_ventures_key_pair.pem file and click "Decrypt" to get the login password. 
+11. Browse and upload 256_ventures_key_pair.pem(or autoview-keypair.pem) file and click "Decrypt" to get the login password. 
 12. Open the remote desktop file and log in. Check box for saving your credentials if you want to remember the password. 
 
 ## Deploying new code onto webapp
